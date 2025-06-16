@@ -4,6 +4,7 @@ import threading
 import time
 
 import redis
+import redis.sentinel
 from prometheus_client.core import CounterMetricFamily, GaugeMetricFamily
 
 RESQUE_NAMESPACE_PREFIX = 'resque'
@@ -58,8 +59,20 @@ class RedisWildcardLookup:
 
 
 class ResqueCollector:
-    def __init__(self, redis_url, namespace=None, custom_metrics=None):
-        self._r = redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
+    def __init__(
+        self, redis_url,
+        namespace=None,
+        custom_metrics=None,
+        redis_sentinel_hosts=None,
+        redis_sentinel_masterset=None,
+        redis_password=None,
+    ):
+        self._r = self._get_redis_client(
+            redis_url,
+            redis_sentinel_hosts=redis_sentinel_hosts,
+            redis_sentinel_masterset=redis_sentinel_masterset,
+            redis_password=redis_password
+        )
         self._r_namespace = namespace
         self.queues = []
         self.workers = []
@@ -81,6 +94,31 @@ class ResqueCollector:
                     'redis_pattern': cm['redis_pattern'],
                     'label_regex': label_regex,
                 })
+
+    def _get_redis_client(
+        self, redis_url,
+        redis_sentinel_hosts=None,
+        redis_sentinel_masterset=None,
+        redis_password=None,
+    ):
+        if redis_url:
+            return redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
+        elif redis_sentinel_hosts:
+            # convert "host1:port1,host2:port2" to format [(host1, port1), (host2, port2)]
+            sentinel_hosts = [(url.split(':')[0], int(url.split(':')[1])) for url in redis_sentinel_hosts.split(',')]
+            sentinel = redis.sentinel.Sentinel(
+                sentinel_hosts,
+                sentinel_kwargs={'password': redis_password} if redis_password else {},
+            )
+            master_host, master_port = sentinel.discover_master(redis_sentinel_masterset or 'mymaster')
+            return redis.StrictRedis(
+                host=master_host,
+                port=master_port,
+                password=redis_password if redis_password else None,
+                encoding="utf-8",
+                decode_responses=True,
+            )
+        raise ValueError("No Redis URL or Sentinel configuration provided")
 
     def _r_key(self, key):
         if self._r_namespace:
