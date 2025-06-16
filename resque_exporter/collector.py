@@ -110,10 +110,8 @@ class ResqueCollector:
                 sentinel_hosts,
                 sentinel_kwargs={'password': redis_password} if redis_password else {},
             )
-            master_host, master_port = sentinel.discover_master(redis_sentinel_masterset or 'mymaster')
-            return redis.StrictRedis(
-                host=master_host,
-                port=master_port,
+            return sentinel.master_for(
+                redis_sentinel_masterset or 'mymaster',
                 password=redis_password if redis_password else None,
                 encoding="utf-8",
                 decode_responses=True,
