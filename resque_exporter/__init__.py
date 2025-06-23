@@ -34,6 +34,15 @@ def main():
     parser.add_argument('-r', '--redis-url', dest='redis_url', type=str,
                         default=os.getenv('RESQUE_EXPORTER_REDIS_URL', 'redis://localhost'),
                         help="Redis URL")
+    parser.add_argument('--redis-sentinel-hosts', dest='redis_sentinel_hosts', type=str,
+                        default=os.getenv('RESQUE_EXPORTER_REDIS_SENTINEL_HOSTS'),
+                        help="Redis Sentinel hosts, e.g. 'host1:26379,host2:26379'")
+    parser.add_argument('--redis-sentinel-masterset', dest='redis_sentinel_masterset', type=str,
+                        default=os.getenv('RESQUE_EXPORTER_REDIS_SENTINEL_MASTERSET'),
+                        help="Redis Sentinel master name")
+    parser.add_argument('--redis-password', dest='redis_password', type=str,
+                        default=os.getenv('RESQUE_EXPORTER_REDIS_PASSWORD'),
+                        help="Redis password")
     parser.add_argument('-n', '--redis-namespace', dest='redis_ns', type=str,
                         default=os.getenv('RESQUE_EXPORTER_REDIS_NS'), help="Redis namespace")
     parser.add_argument('-p', '--port', dest='port', type=int,
@@ -61,6 +70,9 @@ def main():
         args.redis_url,
         namespace=args.redis_ns,
         custom_metrics=args.custom_metrics,
+        redis_sentinel_hosts=args.redis_sentinel_hosts,
+        redis_sentinel_masterset=args.redis_sentinel_masterset,
+        redis_password=args.redis_password,
     )
 
     REGISTRY.register(r_collector)
