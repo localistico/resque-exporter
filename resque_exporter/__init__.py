@@ -32,7 +32,7 @@ def main():
                         default=os.getenv('RESQUE_EXPORTER_ADDR', '0.0.0.0'),
                         help="IP address to expose metrics")
     parser.add_argument('-r', '--redis-url', dest='redis_url', type=str,
-                        default=os.getenv('RESQUE_EXPORTER_REDIS_URL', 'redis://localhost'),
+                        default=os.getenv('RESQUE_EXPORTER_REDIS_URL'),
                         help="Redis URL")
     parser.add_argument('--redis-sentinel-hosts', dest='redis_sentinel_hosts', type=str,
                         default=os.getenv('RESQUE_EXPORTER_REDIS_SENTINEL_HOSTS'),
